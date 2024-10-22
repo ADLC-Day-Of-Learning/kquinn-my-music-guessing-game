@@ -144,7 +144,7 @@ spec:
 $ oc apply -f nodejs-route.yaml
 ```
 
-### Nginx Route {#_nginx_route}
+### Nginx Route 
 
 1. Create a route to expose the frontend service:
 
