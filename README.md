@@ -1,4 +1,4 @@
-# Music Game YAML Configuration
+# Deploying the music guessing game
 
 ## 1. Create the Namespace 
 
