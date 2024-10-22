@@ -1,0 +1,152 @@
+let currentSong = null; // To track the current song being played
+const backendUrl = '${BACKEND_URL}'; // Placeholder that will be replaced with actual value
+let playerName = ''; // To store the player's name
+let guesses = []; // Store guesses for multiple songs
+let correctGuesses = 0; // Track number of correct guesses
+let songs = ['song1', 'song2', 'song3', 'song4', 'song5', 'song6', 'song7', 'song8', 'song9', 'song10']; // Full list of songs
+let currentSongIndex = 0; // To track the current song being played
+
+// Reference to images for background by song value
+const songBackgrounds = {
+    song1: 'images/song1-background.jpg',
+    song2: 'images/song2-background.jpg',
+    song3: 'images/song3-background.jpg',
+    song4: 'images/song4-background.jpg',
+    song5: 'images/song5-background.jpg',
+    song6: 'images/song6-background.jpg',
+    song7: 'images/song7-background.jpg',
+    song8: 'images/song8-background.jpg',
+    song9: 'images/song9-background.jpg',
+    song10: 'images/song10-background.jpg'
+};
+
+// Function to update the background image based on the current song
+function updateBackgroundImage(song) {
+    document.body.style.backgroundImage = `url(${songBackgrounds[song] || 'images/default-background.jpg'})`;
+}
+
+// Function to capture the player's name
+function setPlayerName() {
+    const nameInput = document.getElementById('playerNameInput').value.trim();
+    if (nameInput) {
+        playerName = nameInput;
+        document.getElementById('result').innerText = ''; // Clear any previous messages
+    } else {
+        document.getElementById('result').innerText = 'Please enter your name to play the game.';
+    }
+}
+
+// Function to play the next song in the list
+function playNextSong() {
+    if (currentSongIndex < songs.length) {
+        const songName = songs[currentSongIndex];
+        updateBackgroundImage(songName); // Update background when playing a new song
+        playIntro(songName);
+    } else {
+        document.getElementById('result').innerText = 'All songs played! Submit your guesses.';
+        document.getElementById('submitAllGuessesBtn').disabled = false;
+    }
+}
+
+// Function to play the selected song using the audio element
+function playIntro(songName) {
+    const audioElement = document.getElementById('audioPlayer');
+    audioElement.src = `audio/${songName}.mp3`; // Use local FE path for song files
+    audioElement.load();
+    currentSong = songName;
+
+    const submitButton = document.getElementById('submitGuessBtn');
+    submitButton.disabled = true; // Disable the submit button while the song is playing
+
+    audioElement.play();
+
+    audioElement.onerror = () => {
+        document.getElementById('result').innerText = 'Error: Could not play the song. Please try again.';
+        submitButton.disabled = false; // Re-enable the button on error
+    };
+
+    audioElement.onended = () => {
+        submitButton.disabled = false; // Re-enable the button when the song ends
+    };
+}
+
+// Function to submit a single guess for the current song
+function submitGuess() {
+    const guessInput = document.getElementById('guessInput').value.trim();
+    if (!playerName) {
+        document.getElementById('result').innerText = 'Please enter your name before submitting a guess.';
+        return;
+    }
+
+    if (!guessInput) {
+        document.getElementById('result').innerText = 'Please enter a guess before submitting.';
+        return;
+    }
+
+    // Save the guess to the guesses array
+    guesses.push({ songFile: currentSong, guess: guessInput });
+
+    // Reset the guess input field
+    document.getElementById('guessInput').value = '';
+
+    // Move to the next song
+    currentSongIndex++;
+    playNextSong();
+}
+
+// Function to submit all guesses at once
+async function submitAllGuesses() {
+    document.getElementById('submitAllGuessesBtn').disabled = true;
+
+    try {
+         // Log the URL being fetched
+        console.log(`Fetching: http://${backendUrl}/submit-guesses`);
+
+        const response = await fetch(`http://${backendUrl}/submit-guesses`, { // Using the environment variable directly
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ playerName, guesses }) // Send playerName and all guesses
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        document.getElementById('result').innerText = `Game Over! You got ${result.correctGuesses} out of ${songs.length} correct.`;
+        document.getElementById('correctAnswers').innerText = `Correct answers: ${result.correctAnswers.join(', ')}`;
+        guesses = []; // Reset guesses after submission
+    } catch (error) {
+        console.error('Error submitting all guesses:', error);
+        document.getElementById('result').innerText = 'Error: Could not submit your guesses. Please try again.';
+    } finally {
+        document.getElementById('submitAllGuessesBtn').disabled = false; // Re-enable the button after submission
+    }
+}
+
+// Attach event listeners once the DOM is fully loaded
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize background image on page load
+    const initialSong = document.getElementById('songSelect').value;
+    updateBackgroundImage(initialSong);
+
+    // Set player name
+    document.getElementById('setPlayerNameBtn').addEventListener('click', setPlayerName);
+
+    // Play the selected song
+    document.getElementById('playSongBtn').addEventListener('click', playNextSong);
+
+    // Submit a single guess
+    document.getElementById('submitGuessBtn').addEventListener('click', submitGuess);
+
+    // Submit all guesses
+    document.getElementById('submitAllGuessesBtn').addEventListener('click', submitAllGuesses);
+
+    // Update background image on song selection
+    document.getElementById('songSelect').addEventListener('change', function() {
+        const selectedSong = this.value;
+        updateBackgroundImage(selectedSong);
+    });
+});

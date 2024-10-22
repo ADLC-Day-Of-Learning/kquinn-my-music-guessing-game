@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Game</title>
+    <script defer src="script.js"></script> <!-- Script is deferred to load after HTML -->
+    <style>
+        /* Add basic styles */
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+        #content {
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+        }
+        select, input, button {
+            padding: 10px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="content">
+        <!-- Name Input Field -->
+        <input type="text" id="playerNameInput" placeholder="Enter your name">
+        <!-- Button to Set Player Name -->
+        <button id="setPlayerNameBtn">Set Name</button>
+        
+        <!-- Song selection dropdown -->
+        <select id="songSelect">
+            <option value="song1">Song 1</option>
+            <option value="song2">Song 2</option>
+            <option value="song3">Song 3</option>
+            <option value="song4">Song 4</option>
+            <option value="song5">Song 5</option>
+            <option value="song6">Song 6</option>
+            <option value="song7">Song 7</option>
+            <option value="song8">Song 8</option>
+            <option value="song9">Song 9</option>
+            <option value="song10">Song 10</option>
+        </select>
+
+        <!-- Button to Play the Song -->
+        <button id="playSongBtn">Play Song</button>
+
+        <!-- Input for the Guess -->
+        <input type="text" id="guessInput" placeholder="Enter your guess">
+
+        <!-- Button to Submit the Guess -->
+        <button id="submitGuessBtn">Submit Guess</button>
+
+        <!-- Button to Submit All Guesses -->
+        <button id="submitAllGuessesBtn">Submit All Guesses</button>
+
+        <!-- Audio Player Element -->
+        <audio id="audioPlayer"></audio>
+
+        <!-- Display result messages -->
+        <div id="result"></div>
+        <div id="correctAnswers"></div>
+    </div>
+</body>
+</html>
