@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Music guessing game where you identify songs and artists.">
     <title>Music Game</title>
-    <script defer src="script.js"></script> <!-- Script is deferred to load after HTML -->
+    <script defer src="script.js"></script> <!-- Defer ensures the script loads after HTML -->
     <style>
-        /* Add basic styles */
+        /* Basic reset and styling */
         body {
             font-family: Arial, sans-serif;
             text-align: center;
@@ -22,55 +23,69 @@
             background-repeat: no-repeat;
         }
         #content {
-            background-color: rgba(255, 255, 255, 0.8);
-            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 30px;
             border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 500px;
         }
-        select, input, button {
+        input[type="text"], button {
+            width: 100%;
             padding: 10px;
             margin: 10px 0;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 1rem;
+            color: #333;
+        }
+        #audioPlayer {
+            display: none;
         }
     </style>
 </head>
 <body>
     <div id="content">
-        <!-- Name Input Field -->
-        <input type="text" id="playerNameInput" placeholder="Enter your name">
-        <!-- Button to Set Player Name -->
-        <button id="setPlayerNameBtn">Set Name</button>
-        
-        <!-- Song selection dropdown -->
-        <select id="songSelect">
-            <option value="song1">Song 1</option>
-            <option value="song2">Song 2</option>
-            <option value="song3">Song 3</option>
-            <option value="song4">Song 4</option>
-            <option value="song5">Song 5</option>
-            <option value="song6">Song 6</option>
-            <option value="song7">Song 7</option>
-            <option value="song8">Song 8</option>
-            <option value="song9">Song 9</option>
-            <option value="song10">Song 10</option>
-        </select>
+    <h1>Music Game</h1>
+    <p>Guess the song and artist based on the audio clip!</p>
 
-        <!-- Button to Play the Song -->
-        <button id="playSongBtn">Play Song</button>
+    <input type="text" id="playerNameInput" placeholder="Enter your name" aria-label="Player Name">
+    <button id="setPlayerNameBtn" aria-label="Set your player name">Set Name</button>
 
-        <!-- Input for the Guess -->
-        <input type="text" id="guessInput" placeholder="Enter your guess">
+    <button id="playSongBtn" aria-label="Play the next song" disabled>Play Song</button>
 
-        <!-- Button to Submit the Guess -->
-        <button id="submitGuessBtn">Submit Guess</button>
+    <input type="text" id="songGuessInput" placeholder="Enter your song guess" aria-label="Song Guess">
+    <input type="text" id="artistGuessInput" placeholder="Enter your artist guess" aria-label="Artist Guess">
 
-        <!-- Button to Submit All Guesses -->
-        <button id="submitAllGuessesBtn">Submit All Guesses</button>
+    <button id="submitGuessBtn" aria-label="Submit your guess" disabled>Submit Guess</button>
+    <button id="submitAllGuessesBtn" aria-label="Submit all guesses" disabled>Submit All Guesses</button>
 
-        <!-- Audio Player Element -->
-        <audio id="audioPlayer"></audio>
+    <!-- Result Display -->
+    <div id="result" role="alert"></div>
 
-        <!-- Display result messages -->
-        <div id="result"></div>
-        <div id="correctAnswers"></div>
-    </div>
+    <!-- Correct Answers Display -->
+    <div id="correctAnswers" role="alert" style="margin-top: 20px; font-weight: bold; color: #28a745;"></div>
+</div>
+
+    <!-- Audio element for playing songs -->
+    <audio id="audioPlayer" controls style="display:none;" aria-label="Audio Player"></audio>
 </body>
 </html>
