@@ -269,7 +269,7 @@ metadata:
   name: mongodb
   namespace: music-game
 spec:
-  replicas: 3
+  replicas: 2
   selector:
     matchLabels:
       app: mongodb
@@ -281,20 +281,21 @@ spec:
       securityContext:
         fsGroup: 1000710000
       containers:
-        - name: mongodb
-          image: quay.io/rhn_support_kquinn/mymongodb-advanced-v2:latest
-          ports:
-            - containerPort: 27017
-          volumeMounts:
-            - name: mongodb-data
-              mountPath: /data/db
-          securityContext:
-            runAsUser: 1000710000
-            privileged: true
-      volumes:
+      - name: mongodb
+        image: quay.io/rhn_support_kquinn/be-mongo-db-artist-new:latest
+        ports:
+        - containerPort: 27017
+        volumeMounts:
         - name: mongodb-data
-          persistentVolumeClaim:
-            claimName: mongodb-pvc
+          mountPath: /data/db
+          readOnly: false
+        securityContext:
+          runAsUser: 1000710000
+          privileged: true  # Set the container to run in privileged mode
+      volumes:
+      - name: mongodb-data
+        persistentVolumeClaim:
+          claimName: mongodb-pvc
 ```
 
 2. Apply the MongoDB deployment:
@@ -313,6 +314,8 @@ kind: Deployment
 metadata:
   name: nodejs-app
   namespace: music-game
+  labels:
+    app: nodejs-app
 spec:
   replicas: 3
   selector:
@@ -324,25 +327,32 @@ spec:
         app: nodejs-app
     spec:
       containers:
-        - name: nodejs-app
-          image: quay.io/rhn_support_kquinn/middleware-node-js-app-conns-pooling:latest
-          ports:
-            - containerPort: 3000
-          env:
-            - name: MONGO_URL
-              value: 'mongodb://mongodb-service:27017'
-            - name: DB_NAME
-              value: musicgame
-            - name: ALLOWED_ORIGINS
-              valueFrom:
-                configMapKeyRef:
-                  name: frontend-config
-                  key: ALLOWED_ORIGINS
-            - name: BACKEND_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: backend-config
-                  key: BACKEND_URL
+      - name: nodejs-app
+        image: quay.io/rhn_support_kquinn/middleware-node-js-app-artists-sep-remove:latest
+        ports:
+        - containerPort: 3000
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        env:
+        - name: MONGO_URL
+          value: 'mongodb://mongodb-service:27017'
+        - name: DB_NAME
+          value: musicgame
+        - name: ALLOWED_ORIGINS
+          valueFrom:
+            configMapKeyRef:
+              name: frontend-config
+              key: ALLOWED_ORIGINS
+        - name: BACKEND_URL
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: BACKEND_URL
 ```
 
 2. Apply the Node.js deployment:
@@ -361,6 +371,8 @@ kind: Deployment
 metadata:
   name: nginx-deployment
   namespace: music-game
+  labels:
+    app: nginx
 spec:
   replicas: 1
   selector:
@@ -372,31 +384,31 @@ spec:
         app: nginx
     spec:
       containers:
-        - name: nginx
-          image: quay.io/rhn_support_kquinn/guess-music-fe-app-advanced:latest
-          ports:
-            - containerPort: 8080
-          volumeMounts:
-            - name: cache-volume
-              mountPath: /var/cache/nginx
-          env:
-            - name: BACKEND_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: backend-config
-                  key: BACKEND_URL
-          securityContext:
-            runAsUser: 0
-            allowPrivilegeEscalation: true
-          command: ["/bin/sh"]
-          args: ["-c",
-          "envsubst '${BACKEND_URL}' < /usr/share/nginx/html/index.html.template > /usr/share/nginx/html/index.html && \
-           envsubst '${BACKEND_URL}' < /usr/share/nginx/html/script.js.template > /usr/share/nginx/html/script.js && \
-           envsubst '${BACKEND_URL}' < /etc/nginx/nginx.conf.template > /tmp/nginx.conf && \
-           mv /tmp/nginx.conf /etc/nginx/nginx.conf && nginx -g 'daemon off;'"]
-        volumes:
-          - name: cache-volume
-            emptyDir: {}
+      - name: nginx
+        image: quay.io/rhn_support_kquinn/fe_revised_artist_sep_remove_song_select:latest
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: cache-volume
+          mountPath: /var/cache/nginx
+        env:
+        - name: BACKEND_URL
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config  # Reference the existing ConfigMap
+              key: BACKEND_URL
+        securityContext:  # Add securityContext for running as root
+          runAsUser: 0               # Run as root user (UID 0)
+          allowPrivilegeEscalation: true  # Allow privilege escalation if needed
+        command: ["/bin/sh"]
+        args: ["-c", 
+        "envsubst '${BACKEND_URL}' < /usr/share/nginx/html/index.html.template > /usr/share/nginx/html/index.html && \
+         envsubst '${BACKEND_URL}' < /usr/share/nginx/html/script.js.template > /usr/share/nginx/html/script.js && \
+         envsubst '${BACKEND_URL}' < /etc/nginx/nginx.conf.template > /tmp/nginx.conf && \
+         mv /tmp/nginx.conf /etc/nginx/nginx.conf && nginx -g 'daemon off;'"]
+      volumes:
+      - name: cache-volume
+        emptyDir: {}
 ```
 
 2. Apply the Nginx deployment:
