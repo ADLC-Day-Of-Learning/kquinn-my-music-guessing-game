@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: quay.io/rhn_support_kquinn/guess-music-fe-app-advanced:latest
+        image: quay.io/rhn_support_kquinn/fe_revised_artist_sep_remove_song_select:latest
         ports:
         - containerPort: 8080
         volumeMounts:
