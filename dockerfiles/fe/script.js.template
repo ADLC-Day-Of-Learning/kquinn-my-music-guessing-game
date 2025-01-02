@@ -1,12 +1,7 @@
-let currentSong = null; // To track the current song being played
-const backendUrl = '${BACKEND_URL}'; // Placeholder that will be replaced with actual value
-let playerName = ''; // To store the player's name
-let guesses = []; // Store guesses for multiple songs
-let correctGuesses = 0; // Track number of correct guesses
-let songs = ['song1', 'song2', 'song3', 'song4', 'song5', 'song6', 'song7', 'song8', 'song9', 'song10']; // Full list of songs
-let currentSongIndex = 0; // To track the current song being played
+// Script.js for Music Game Application
 
-// Reference to images for background by song value
+const backendUrl = BACKEND_URL; // Dynamically set using ConfigMap
+const songs = ['song1', 'song2', 'song3', 'song4', 'song5']; // Example list of song files
 const songBackgrounds = {
     song1: 'images/song1-background.jpg',
     song2: 'images/song2-background.jpg',
@@ -20,133 +15,116 @@ const songBackgrounds = {
     song10: 'images/song10-background.jpg'
 };
 
-// Function to update the background image based on the current song
+let currentSongIndex = 0;
+let guesses = [];
+let playerName = ''; // Captured at the start of the game
+
+const audioElement = document.getElementById('audio');
+const resultElement = document.getElementById('result');
+const playSongBtn = document.getElementById('playSongBtn');
+const submitGuessBtn = document.getElementById('submitGuessBtn');
+const submitAllGuessesBtn = document.getElementById('submitAllGuessesBtn');
+
 function updateBackgroundImage(song) {
-    document.body.style.backgroundImage = `url(${songBackgrounds[song] || 'images/default-background.jpg'})`;
+    const background = songBackgrounds[song] || 'images/default-background.jpg';
+    document.body.style.backgroundImage = `url(${background})`;
 }
 
-// Function to capture the player's name
-function setPlayerName() {
-    const nameInput = document.getElementById('playerNameInput').value.trim();
-    if (nameInput) {
-        playerName = nameInput;
-        document.getElementById('result').innerText = ''; // Clear any previous messages
-    } else {
-        document.getElementById('result').innerText = 'Please enter your name to play the game.';
-    }
-}
-
-// Function to play the next song in the list
 function playNextSong() {
     if (currentSongIndex < songs.length) {
-        const songName = songs[currentSongIndex];
-        updateBackgroundImage(songName); // Update background when playing a new song
-        playIntro(songName);
+        const currentSong = songs[currentSongIndex];
+        audioElement.src = `/audio/${currentSong}.mp3`;
+        audioElement.play();
+        updateBackgroundImage(currentSong);
+
+        resultElement.innerText = `Playing: ${currentSong}`;
+        currentSongIndex++;
+        playSongBtn.disabled = true;
+        submitGuessBtn.disabled = false;
     } else {
-        document.getElementById('result').innerText = 'All songs played! Submit your guesses.';
-        document.getElementById('submitAllGuessesBtn').disabled = false;
+        resultElement.innerText = 'All songs have been played. Submit your guesses for the final results.';
+        playSongBtn.disabled = true;
+        submitAllGuessesBtn.disabled = false;
     }
 }
 
-// Function to play the selected song using the audio element
-function playIntro(songName) {
-    const audioElement = document.getElementById('audioPlayer');
-    audioElement.src = `audio/${songName}.mp3`; // Use local FE path for song files
-    audioElement.load();
-    currentSong = songName;
-
-    const submitButton = document.getElementById('submitGuessBtn');
-    submitButton.disabled = true; // Disable the submit button while the song is playing
-
-    audioElement.play();
-
-    audioElement.onerror = () => {
-        document.getElementById('result').innerText = 'Error: Could not play the song. Please try again.';
-        submitButton.disabled = false; // Re-enable the button on error
-    };
-
-    audioElement.onended = () => {
-        submitButton.disabled = false; // Re-enable the button when the song ends
-    };
-}
-
-// Function to submit a single guess for the current song
 function submitGuess() {
-    const guessInput = document.getElementById('guessInput').value.trim();
-    if (!playerName) {
-        document.getElementById('result').innerText = 'Please enter your name before submitting a guess.';
-        return;
+    const songGuessInput = document.getElementById('songGuessInput');
+    const artistGuessInput = document.getElementById('artistGuessInput');
+
+    if (songGuessInput.value.trim() && artistGuessInput.value.trim()) {
+        guesses.push({
+            songFile: songs[currentSongIndex - 1],
+            songGuess: songGuessInput.value.trim(),
+            artistGuess: artistGuessInput.value.trim()
+        });
+
+        songGuessInput.value = '';
+        artistGuessInput.value = '';
+        resultElement.innerText = 'Guess submitted! Get ready for the next song.';
+
+        submitGuessBtn.disabled = true;
+        setTimeout(playNextSong, 2000); // Delay before playing the next song
+    } else {
+        resultElement.innerText = 'Please enter both a song and an artist guess.';
     }
-
-    if (!guessInput) {
-        document.getElementById('result').innerText = 'Please enter a guess before submitting.';
-        return;
-    }
-
-    // Save the guess to the guesses array
-    guesses.push({ songFile: currentSong, guess: guessInput });
-
-    // Reset the guess input field
-    document.getElementById('guessInput').value = '';
-
-    // Move to the next song
-    currentSongIndex++;
-    playNextSong();
 }
 
-// Function to submit all guesses at once
 async function submitAllGuesses() {
-    document.getElementById('submitAllGuessesBtn').disabled = true;
+    submitAllGuessesBtn.disabled = true;
+    submitAllGuessesBtn.innerText = 'Submitting...';
 
     try {
-         // Log the URL being fetched
-        console.log(`Fetching: http://${backendUrl}/submit-guesses`);
-
-        const response = await fetch(`http://${backendUrl}/submit-guesses`, { // Using the environment variable directly
+        const response = await fetch(`${backendUrl}/submit-guesses`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ playerName, guesses }) // Send playerName and all guesses
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ playerName, guesses })
         });
 
         if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
+            throw new Error('Failed to submit guesses');
         }
 
         const result = await response.json();
-        document.getElementById('result').innerText = `Game Over! You got ${result.correctGuesses} out of ${songs.length} correct.`;
-        document.getElementById('correctAnswers').innerText = `Correct answers: ${result.correctAnswers.join(', ')}`;
-        guesses = []; // Reset guesses after submission
+
+        const totalCorrectSongGuesses = result.correctSongGuesses || 0;
+        const totalCorrectArtistGuesses = result.correctArtistGuesses || 0;
+        const correctAnswers = result.correctAnswers || [];
+
+        resultElement.innerText = `
+            Game Over! You got ${totalCorrectSongGuesses} song(s) and ${totalCorrectArtistGuesses} artist(s) correct.
+            Correct Answers: ${correctAnswers.join(', ')}
+        `;
+
+        submitAllGuessesBtn.innerText = 'Submit All Guesses';
     } catch (error) {
-        console.error('Error submitting all guesses:', error);
-        document.getElementById('result').innerText = 'Error: Could not submit your guesses. Please try again.';
-    } finally {
-        document.getElementById('submitAllGuessesBtn').disabled = false; // Re-enable the button after submission
+        console.error('Error submitting guesses:', error);
+        resultElement.innerText = 'Error: Could not submit your guesses. Please try again.';
+        submitAllGuessesBtn.disabled = false;
+        submitAllGuessesBtn.innerText = 'Submit All Guesses';
     }
 }
 
-// Attach event listeners once the DOM is fully loaded
-document.addEventListener('DOMContentLoaded', () => {
-    // Initialize background image on page load
-    const initialSong = document.getElementById('songSelect').value;
-    updateBackgroundImage(initialSong);
+audioElement.onended = () => {
+    submitGuessBtn.disabled = false;
+};
 
-    // Set player name
-    document.getElementById('setPlayerNameBtn').addEventListener('click', setPlayerName);
+playSongBtn.addEventListener('click', playNextSong);
+submitGuessBtn.addEventListener('click', submitGuess);
+submitAllGuessesBtn.addEventListener('click', submitAllGuesses);
 
-    // Play the selected song
-    document.getElementById('playSongBtn').addEventListener('click', playNextSong);
+// Initialize the game
+function initializeGame() {
+    playerName = prompt('Enter your name to start the game:');
+    if (!playerName) {
+        resultElement.innerText = 'Please enter a valid name to start.';
+        return;
+    }
 
-    // Submit a single guess
-    document.getElementById('submitGuessBtn').addEventListener('click', submitGuess);
+    resultElement.innerText = `Welcome, ${playerName}! Click "Play Song" to start.`;
+    playSongBtn.disabled = false;
+    submitGuessBtn.disabled = true;
+    submitAllGuessesBtn.disabled = true;
+}
 
-    // Submit all guesses
-    document.getElementById('submitAllGuessesBtn').addEventListener('click', submitAllGuesses);
-
-    // Update background image on song selection
-    document.getElementById('songSelect').addEventListener('change', function() {
-        const selectedSong = this.value;
-        updateBackgroundImage(selectedSong);
-    });
-});
+initializeGame();
