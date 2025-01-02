@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: nodejs-app
-        image: quay.io/rhn_support_kquinn/middleware-node-js-app-conns-pooling:latest
+        image: quay.io/rhn_support_kquinn/middleware-node-js-app-artists-sep-remove:latest
         ports:
         - containerPort: 3000
         resources:
@@ -42,4 +42,3 @@ spec:
             configMapKeyRef:
               name: backend-config
               key: BACKEND_URL
-
