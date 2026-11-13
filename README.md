@@ -239,7 +239,9 @@ metadata:
   name: mongodb
   namespace: music-game
 spec:
-  replicas: 2
+  replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: mongodb
@@ -255,13 +257,20 @@ spec:
         image: quay.io/rhn_support_kquinn/be-mongo-db-artist-new:latest
         ports:
         - containerPort: 27017
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
         volumeMounts:
         - name: mongodb-data
           mountPath: /data/db
           readOnly: false
         securityContext:
+          allowPrivilegeEscalation: false
           runAsUser: 1000710000
-          privileged: true  # Set the container to run in privileged mode
       volumes:
       - name: mongodb-data
         persistentVolumeClaim:
