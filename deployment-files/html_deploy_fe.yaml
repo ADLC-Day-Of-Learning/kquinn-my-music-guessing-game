@@ -17,9 +17,16 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: quay.io/rhn_support_kquinn/fe_revised_artist_sep_remove_song_select:latest
+        image: registry.access.redhat.com/ubi9/nginx-124
         ports:
         - containerPort: 8080
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
         volumeMounts:
         - name: cache-volume
           mountPath: /var/cache/nginx
@@ -29,15 +36,14 @@ spec:
             configMapKeyRef:
               name: backend-config  # Reference the existing ConfigMap
               key: BACKEND_URL
-        securityContext:  # Add securityContext for running as root
-          runAsUser: 0               # Run as root user (UID 0)
-          allowPrivilegeEscalation: true  # Allow privilege escalation if needed
+        securityContext:
+          allowPrivilegeEscalation: false
         command: ["/bin/sh"]
         args: ["-c", 
         "envsubst '${BACKEND_URL}' < /usr/share/nginx/html/index.html.template > /usr/share/nginx/html/index.html && \
          envsubst '${BACKEND_URL}' < /usr/share/nginx/html/script.js.template > /usr/share/nginx/html/script.js && \
          envsubst '${BACKEND_URL}' < /etc/nginx/nginx.conf.template > /tmp/nginx.conf && \
-         mv /tmp/nginx.conf /etc/nginx/nginx.conf && nginx -g 'daemon off;'"]
+         nginx -c /tmp/nginx.conf -g 'daemon off;'"]
       volumes:
       - name: cache-volume
         emptyDir: {}
