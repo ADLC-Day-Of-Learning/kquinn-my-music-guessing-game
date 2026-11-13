@@ -185,7 +185,7 @@ $ oc create configmap backend-config -n music-game --from-literal=BACKEND_URL=$(
 $ oc create configmap frontend-config -n music-game --from-literal=ALLOWED_ORIGINS=$(oc get route nginx-route -n music-game -o jsonpath='{.spec.host}')
 ```
 
-## 6. Deploy Persistent Volume and Persistent Volume Claim 
+## 6. Deploy Persistent Volume Claim 
 
 
 1. Change to the `pv-files` directory:
@@ -211,39 +211,9 @@ spec:
   resources:
     requests:
       storage: 5Gi
-  storageClassName: manual
 ```
 
 2. Apply the PVC definition:
-
-``` highlight
-$ oc apply -f pvmongo.yaml
-```
-
-### MongoDB PV 
-
-
-1. Create a PV for MongoDB:
-
-``` highlight
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: mongodb-pv
-spec:
-  capacity:
-    storage: 5Gi
-  accessModes:
-    - ReadWriteOnce
-  hostPath:
-    path: /mnt/data/mongodb
-    type: DirectoryOrCreate
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: manual
-```
-
-
-2. Apply the PV definition:
 
 ``` highlight
 $ oc apply -f pvcmongo.yaml
