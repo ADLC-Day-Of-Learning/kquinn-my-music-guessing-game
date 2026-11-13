@@ -24,6 +24,8 @@ const songBackgrounds = {
 let currentSongIndex = 0;
 let guesses = [];
 let playerName = ''; // Captured at the start of the game
+let nextSongTimer = null;
+let isGameOver = false;
 
 const playerNameInput = document.getElementById('playerNameInput');
 const setPlayerNameBtn = document.getElementById('setPlayerNameBtn');
@@ -93,6 +95,14 @@ function setPlayerName(name) {
 }
 
 function playNextSong() {
+    if (nextSongTimer) {
+        clearTimeout(nextSongTimer);
+        nextSongTimer = null;
+    }
+    if (isGameOver) {
+        return;
+    }
+
     if (!playerName) {
         if (resultElement) {
             resultElement.innerText = 'Please set your player name before playing.';
@@ -172,7 +182,10 @@ function submitGuess() {
             submitGuessBtn.disabled = true;
         }
         updateSubmitAllGuessesBtnState();
-        setTimeout(playNextSong, 2000); // Delay before playing the next song
+        if (nextSongTimer) {
+            clearTimeout(nextSongTimer);
+        }
+        nextSongTimer = setTimeout(playNextSong, 2000); // Delay before playing the next song
     } else {
         if (resultElement) {
             resultElement.innerText = 'Please enter both a song and an artist guess.';
@@ -197,6 +210,11 @@ async function submitAllGuesses() {
         }
         updateSubmitAllGuessesBtnState();
         return;
+    }
+
+    if (nextSongTimer) {
+        clearTimeout(nextSongTimer);
+        nextSongTimer = null;
     }
 
     if (submitAllGuessesBtn) {
@@ -257,6 +275,8 @@ async function submitAllGuesses() {
         const totalCorrectArtistGuesses = result.correctArtistGuesses || 0;
         const correctAnswers = result.correctAnswers || [];
 
+        isGameOver = true;
+
         if (resultElement) {
             resultElement.innerText = `Game Over! You got ${totalCorrectSongGuesses} song(s) and ${totalCorrectArtistGuesses} artist(s) correct. Correct Answers: ${correctAnswers.join(', ')}`;
         }
@@ -267,6 +287,12 @@ async function submitAllGuesses() {
         if (submitAllGuessesBtn) {
             submitAllGuessesBtn.innerText = 'Submit All Guesses';
             submitAllGuessesBtn.disabled = true; // Final submission complete
+        }
+        if (submitGuessBtn) {
+            submitGuessBtn.disabled = true;
+        }
+        if (playSongBtn) {
+            playSongBtn.disabled = true;
         }
     } catch (error) {
         console.error('Error submitting guesses:', error);
@@ -282,6 +308,11 @@ async function submitAllGuesses() {
 
 // Initialize the game
 function initializeGame() {
+    if (nextSongTimer) {
+        clearTimeout(nextSongTimer);
+        nextSongTimer = null;
+    }
+    isGameOver = false;
     playerName = '';
     guesses = [];
     currentSongIndex = 0;
@@ -339,7 +370,7 @@ if (submitAllGuessesBtn) {
 
 if (audioElement) {
     audioElement.onended = () => {
-        if (submitGuessBtn) {
+        if (!isGameOver && submitGuessBtn) {
             submitGuessBtn.disabled = false;
         }
     };
@@ -364,6 +395,10 @@ if (typeof module !== 'undefined' && module.exports) {
         get currentSongIndex() { return currentSongIndex; },
         set currentSongIndex(val) { currentSongIndex = val; },
         get backendUrl() { return backendUrl; },
-        set backendUrl(val) { backendUrl = val; }
+        set backendUrl(val) { backendUrl = val; },
+        get isGameOver() { return isGameOver; },
+        set isGameOver(val) { isGameOver = val; },
+        get nextSongTimer() { return nextSongTimer; },
+        set nextSongTimer(val) { nextSongTimer = val; }
     };
 }

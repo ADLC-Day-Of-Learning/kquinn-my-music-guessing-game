@@ -291,5 +291,50 @@ test('Submit Guesses State and Error Handling', async (t) => {
         assert.strictEqual(dom.submitAllGuessesBtn.innerText, 'Submit All Guesses');
         assert.strictEqual(dom.submitAllGuessesBtn.disabled, false);
     });
+
+    await t.test('cancels pending song transition timer when submitting all guesses', async () => {
+        const dom = setupMockDom();
+        delete require.cache[require.resolve('../dockerfiles/fe/script.js.template')];
+        const script = require('../dockerfiles/fe/script.js.template');
+
+        script.initializeGame();
+        dom.playerNameInput.value = 'PlayerOne';
+        script.setPlayerName();
+
+        script.playNextSong();
+        dom.songGuessInput.value = 'Song A';
+        dom.artistGuessInput.value = 'Artist B';
+        script.submitGuess();
+
+        // Verify timer is scheduled
+        assert.ok(script.nextSongTimer !== null, 'nextSongTimer should be set after submitGuess');
+
+        global.fetch = async () => ({
+            ok: true,
+            status: 200,
+            json: async () => ({
+                correctSongGuesses: 1,
+                correctArtistGuesses: 1,
+                correctAnswers: ['Song A - Artist B']
+            })
+        });
+
+        await script.submitAllGuesses();
+        const finalScore = dom.result.innerText;
+        assert.match(finalScore, /Game Over!/i);
+        assert.strictEqual(script.isGameOver, true, 'isGameOver state should be true');
+        assert.strictEqual(script.nextSongTimer, null, 'nextSongTimer should be cleared to null');
+
+        // Wait past the 2000ms timer window to verify playNextSong does not fire
+        await new Promise((resolve) => setTimeout(resolve, 2100));
+
+        assert.strictEqual(dom.result.innerText, finalScore, 'Game over score screen should not be overwritten');
+        assert.strictEqual(dom.submitGuessBtn.disabled, true, 'submitGuessBtn should remain disabled after game over');
+
+        // Verify calling playNextSong directly after game over is an early return
+        script.playNextSong();
+        assert.strictEqual(dom.result.innerText, finalScore, 'playNextSong should return early when game is over');
+        assert.strictEqual(script.currentSongIndex, 1, 'currentSongIndex should not increment when game is over');
+    });
 });
 
