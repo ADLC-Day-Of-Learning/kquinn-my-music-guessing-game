@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(oc apply:*)",
+      "Bash(curl -s -X POST http://nodejs-route-music-game.apps.ci-ln-l20996b-76ef8.aws-4.ci.openshift.org/validate-guess -H \"Content-Type: application/json\" -d '{\"\"\"\"songFile\"\"\"\":\"\"\"\"song1\"\"\"\",\"\"\"\"songGuess\"\"\"\":\"\"\"\"Beutiful Day\"\"\"\",\"\"\"\"artistGuess\"\"\"\":\"\"\"\"U2\"\"\"\"}')",
+      "Bash(curl -s \"http://nodejs-route-music-game.apps.ci-ln-l20996b-76ef8.aws-4.ci.openshift.org/leaderboard?filter=daily\")",
+      "Bash(oc logs:*)",
+      "Bash(curl -k -s \"https://nodejs-route-music-game-spotify.apps.ci-ln-8ptmytt-76ef8.aws-4.ci.openshift.org/api/admin/songs\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
