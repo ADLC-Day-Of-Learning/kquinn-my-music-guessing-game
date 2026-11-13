@@ -5,6 +5,7 @@ const assert = require('node:assert');
 function createMockElement(id, tagName = 'div') {
     const listeners = {};
     const classSet = new Set();
+    const attributes = {};
     return {
         id,
         tagName,
@@ -18,6 +19,15 @@ function createMockElement(id, tagName = 'div') {
             add: (cls) => classSet.add(cls),
             remove: (cls) => classSet.delete(cls),
             contains: (cls) => classSet.has(cls)
+        },
+        setAttribute: function (name, val) {
+            attributes[name] = String(val);
+        },
+        getAttribute: function (name) {
+            return Object.prototype.hasOwnProperty.call(attributes, name) ? attributes[name] : null;
+        },
+        removeAttribute: function (name) {
+            delete attributes[name];
         },
         focus: function () {
             this.focused = true;
@@ -78,6 +88,8 @@ test('Submit Guesses State and Error Handling', async (t) => {
         script.setPlayerName();
         assert.strictEqual(dom.playSongBtn.disabled, true, 'playSongBtn should remain disabled with empty name');
         assert.strictEqual(dom.playerNameInput.classList.contains('input-error'), true, 'playerNameInput should have input-error class');
+        assert.strictEqual(dom.playerNameInput.getAttribute('aria-invalid'), 'true', 'aria-invalid should be set on error');
+        assert.strictEqual(dom.playerNameInput.getAttribute('aria-describedby'), 'result', 'aria-describedby should link to error message');
         assert.match(dom.result.innerText, /valid player name/i, 'should inform user to enter a valid name');
 
         // Entering valid name enables playSongBtn
@@ -87,6 +99,8 @@ test('Submit Guesses State and Error Handling', async (t) => {
         assert.strictEqual(dom.playSongBtn.disabled, false, 'playSongBtn should be enabled once name is set');
         assert.strictEqual(dom.submitAllGuessesBtn.disabled, true, 'submitAllGuessesBtn should still be disabled with 0 guesses');
         assert.strictEqual(dom.playerNameInput.classList.contains('input-error'), false, 'input-error should be removed');
+        assert.strictEqual(dom.playerNameInput.getAttribute('aria-invalid'), null, 'aria-invalid should be removed on valid name');
+        assert.strictEqual(dom.playerNameInput.getAttribute('aria-describedby'), null, 'aria-describedby should be removed on valid name');
     });
 
     await t.test('prevents submission when no guesses have been recorded', () => {
@@ -237,6 +251,8 @@ test('Submit Guesses State and Error Handling', async (t) => {
         // Directly call playNextSong without setting name
         script.playNextSong();
         assert.strictEqual(dom.playerNameInput.classList.contains('input-error'), true, 'playerNameInput should be highlighted');
+        assert.strictEqual(dom.playerNameInput.getAttribute('aria-invalid'), 'true', 'aria-invalid should be set on error');
+        assert.strictEqual(dom.playerNameInput.getAttribute('aria-describedby'), 'result', 'aria-describedby should link to error message');
         assert.strictEqual(dom.playSongBtn.disabled, true);
         assert.match(dom.result.innerText, /set your player name/i);
 
@@ -244,6 +260,27 @@ test('Submit Guesses State and Error Handling', async (t) => {
         dom.playerNameInput.value = 'A';
         dom.playerNameInput.dispatchEvent('input');
         assert.strictEqual(dom.playerNameInput.classList.contains('input-error'), false, 'typing should clear highlight');
+        assert.strictEqual(dom.playerNameInput.getAttribute('aria-invalid'), null, 'aria-invalid should be removed on input');
+        assert.strictEqual(dom.playerNameInput.getAttribute('aria-describedby'), null, 'aria-describedby should be removed on input');
+    });
+
+    await t.test('manages ARIA attribute lifecycle on playerNameInput validation error and resolution', () => {
+        const dom = setupMockDom();
+        delete require.cache[require.resolve('../dockerfiles/fe/script.js.template')];
+        const script = require('../dockerfiles/fe/script.js.template');
+
+        script.initializeGame();
+
+        // Trigger validation failure
+        script.playNextSong();
+        assert.strictEqual(dom.playerNameInput.getAttribute('aria-invalid'), 'true', 'aria-invalid should be set on error');
+        assert.strictEqual(dom.playerNameInput.getAttribute('aria-describedby'), 'result', 'aria-describedby should link to error message');
+
+        // Clear error state on input
+        dom.playerNameInput.value = 'TestPlayer';
+        dom.playerNameInput.dispatchEvent('input');
+        assert.strictEqual(dom.playerNameInput.getAttribute('aria-invalid'), null, 'aria-invalid should be removed when cleared');
+        assert.strictEqual(dom.playerNameInput.getAttribute('aria-describedby'), null, 'aria-describedby should be removed when cleared');
     });
 
     await t.test('supports Enter key in playerNameInput to set name', () => {
