@@ -385,7 +385,7 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: registry.access.redhat.com/ubi9/nginx-124
+        image: quay.io/rhn_support_kquinn/fe_revised_artist_sep_remove_song_select:latest
         ports:
         - containerPort: 8080
         resources:
@@ -398,6 +398,8 @@ spec:
         volumeMounts:
         - name: cache-volume
           mountPath: /var/cache/nginx
+        - name: tmp-volume
+          mountPath: /tmp
         env:
         - name: BACKEND_URL
           valueFrom:
@@ -408,12 +410,17 @@ spec:
           allowPrivilegeEscalation: false
         command: ["/bin/sh"]
         args: ["-c", 
-        "envsubst '${BACKEND_URL}' < /usr/share/nginx/html/index.html.template > /usr/share/nginx/html/index.html && \
-         envsubst '${BACKEND_URL}' < /usr/share/nginx/html/script.js.template > /usr/share/nginx/html/script.js && \
+        "mkdir -p /tmp/html && \
+         cp -r /usr/share/nginx/html/* /tmp/html/ && \
+         envsubst '${BACKEND_URL}' < /usr/share/nginx/html/index.html.template > /tmp/html/index.html && \
+         envsubst '${BACKEND_URL}' < /usr/share/nginx/html/script.js.template > /tmp/html/script.js && \
          envsubst '${BACKEND_URL}' < /etc/nginx/nginx.conf.template > /tmp/nginx.conf && \
+         sed -i 's|/usr/share/nginx/html|/tmp/html|g' /tmp/nginx.conf && \
          nginx -c /tmp/nginx.conf -g 'daemon off;'"]
       volumes:
       - name: cache-volume
+        emptyDir: {}
+      - name: tmp-volume
         emptyDir: {}
 ```
 
