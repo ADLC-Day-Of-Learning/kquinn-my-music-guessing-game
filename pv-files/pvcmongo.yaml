@@ -2,11 +2,10 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: mongodb-pvc
-  namespace: music-game  # Ensure this matches the namespace of your PV and Deployment
+  namespace: music-game  # Ensure this matches the namespace of your Deployment
 spec:
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
       storage: 5Gi
-  storageClassName: manual  # Match this with the storageClassName in the PV if used
