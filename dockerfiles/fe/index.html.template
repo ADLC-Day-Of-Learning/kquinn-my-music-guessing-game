@@ -52,6 +52,10 @@
             background-color: #cccccc;
             cursor: not-allowed;
         }
+        .input-error {
+            border: 2px solid #dc3545 !important;
+            outline: none;
+        }
         #result {
             margin-top: 20px;
             font-size: 1rem;
