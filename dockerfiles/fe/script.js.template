@@ -47,6 +47,8 @@ function highlightPlayerNameInput() {
     if (playerNameInput) {
         playerNameInput.style.border = '2px solid #dc3545';
         playerNameInput.classList.add('input-error');
+        playerNameInput.setAttribute('aria-invalid', 'true');
+        playerNameInput.setAttribute('aria-describedby', 'result');
         playerNameInput.focus();
     }
 }
@@ -55,6 +57,8 @@ function clearPlayerNameHighlight() {
     if (playerNameInput) {
         playerNameInput.style.border = '';
         playerNameInput.classList.remove('input-error');
+        playerNameInput.removeAttribute('aria-invalid');
+        playerNameInput.removeAttribute('aria-describedby');
     }
 }
 
