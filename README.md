@@ -367,26 +367,39 @@ spec:
         image: quay.io/rhn_support_kquinn/fe_revised_artist_sep_remove_song_select:latest
         ports:
         - containerPort: 8080
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
         volumeMounts:
         - name: cache-volume
           mountPath: /var/cache/nginx
+        - name: tmp-volume
+          mountPath: /tmp
         env:
         - name: BACKEND_URL
           valueFrom:
             configMapKeyRef:
               name: backend-config  # Reference the existing ConfigMap
               key: BACKEND_URL
-        securityContext:  # Add securityContext for running as root
-          runAsUser: 0               # Run as root user (UID 0)
-          allowPrivilegeEscalation: true  # Allow privilege escalation if needed
+        securityContext:
+          allowPrivilegeEscalation: false
         command: ["/bin/sh"]
         args: ["-c", 
-        "envsubst '${BACKEND_URL}' < /usr/share/nginx/html/index.html.template > /usr/share/nginx/html/index.html && \
-         envsubst '${BACKEND_URL}' < /usr/share/nginx/html/script.js.template > /usr/share/nginx/html/script.js && \
+        "mkdir -p /tmp/html && \
+         cp -r /usr/share/nginx/html/* /tmp/html/ && \
+         envsubst '${BACKEND_URL}' < /usr/share/nginx/html/index.html.template > /tmp/html/index.html && \
+         envsubst '${BACKEND_URL}' < /usr/share/nginx/html/script.js.template > /tmp/html/script.js && \
          envsubst '${BACKEND_URL}' < /etc/nginx/nginx.conf.template > /tmp/nginx.conf && \
-         mv /tmp/nginx.conf /etc/nginx/nginx.conf && nginx -g 'daemon off;'"]
+         sed -i 's|/usr/share/nginx/html|/tmp/html|g' /tmp/nginx.conf && \
+         nginx -c /tmp/nginx.conf -g 'daemon off;'"]
       volumes:
       - name: cache-volume
+        emptyDir: {}
+      - name: tmp-volume
         emptyDir: {}
 ```
 
